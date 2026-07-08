@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart — The Lands Between Collectibles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/bento.css?v=3">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<!-- Light Rays Background -->
+<div class="light-rays-container">
+  <canvas id="raysCanvas"></canvas>
+</div>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">Lands Between</span>
+      <span class="brand-sub">Collectibles</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="shop.html?game=Elden+Ring">Elden Ring</a></li>
+      <li><a href="shop.html?game=Dark+Souls">Dark Souls</a></li>
+      <li><a href="shop.html?game=Bloodborne">Bloodborne</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="login-btn" id="navLoginBtn">Sign In</button>
+      <a href="cart.html" class="cart-btn active">Cart <span class="cart-count" data-cart-count>0</span></a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<div class="page-banner">
+  <p class="crumbs"><a href="index.html">Home</a> / Cart</p>
+  <h1>Your Cart</h1>
+</div>
+
+<main class="container" style="padding:60px 32px 100px;" id="cartRoot"></main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 The Lands Between Collectibles. Unofficial fan tribute.</span>
+      <span>Crafted with reverence for the Soulslike legacy.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/lightfall.js"></script>
+<script src="js/main.js?v=4"></script>
+<script src="js/rays.js"></script>
+<script src="js/bento.js"></script>
+<script>
+function renderCart(){
+  const lines = cartLines();
+  const root = document.getElementById("cartRoot");
+
+  if(!lines.length){
+    root.innerHTML = `
+      <div class="empty-cart">
+        <div class="ic">⚔</div>
+        <h2>Your cart lies empty, as silent as the Abyss.</h2>
+        <p style="color:var(--text-muted); margin-bottom:30px;">Browse the collection and bring a relic home.</p>
+        <a href="shop.html" class="btn btn-solid">Browse the Collection</a>
+      </div>`;
+    return;
+  }
+
+  const { subtotal, gst, shipping, total } = computePricing();
+
+  root.innerHTML = `
+    <div class="cart-layout">
+      <div>
+        <table class="cart-table">
+          <thead><tr><th>Item</th><th>Quantity</th><th>Total</th><th></th></tr></thead>
+          <tbody id="cartRows"></tbody>
+        </table>
+      </div>
+      <div class="summary-box">
+        <h3>Order Summary</h3>
+        <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal">${formatINR(subtotal)}</span></div>
+        <div class="summary-row"><span>GST (18%)</span><span id="sumGst">${formatINR(gst)}</span></div>
+        <div class="summary-row"><span>Home Delivery</span><span id="sumShip">${shipping===0?'Free':formatINR(shipping)}</span></div>
+        <p class="shipping-note ${subtotal>=2000?'free':''}" id="shipNote">
+          ${subtotal>=2000 ? "You've unlocked free delivery." : `Add ${formatINR(2000-subtotal)} more for free delivery.`}
+        </p>
+        <div class="summary-row total"><span>Grand Total</span><span id="sumTotal">${formatINR(total)}</span></div>
+        <a href="checkout.html" class="btn btn-solid btn-block" style="margin-top:20px;">Proceed to Checkout</a>
+        <a href="shop.html" class="btn btn-ghost btn-block" style="margin-top:12px;">Continue Browsing</a>
+      </div>
+    </div>
+  `;
+
+  const rows = document.getElementById("cartRows");
+  rows.innerHTML = lines.map(l => `
+    <tr class="cart-row" data-id="${l.product.id}">
+      <td>
+        <div class="cart-item">
+          <img src="${l.product.images[0]}" alt="${l.product.name}">
+          <div>
+            <div class="cart-item-name">${l.product.name}</div>
+            <div class="cart-item-meta">${l.product.game} · ${l.product.scale} Scale · ${formatINR(l.product.price)} each</div>
+            <button class="cart-remove" data-remove="${l.product.id}">Remove</button>
+          </div>
+        </div>
+      </td>
+      <td class="cart-qty">
+        <div class="qty-control">
+          <button type="button" data-dec="${l.product.id}">−</button>
+          <input type="text" readonly value="${l.qty}" data-qtyval="${l.product.id}">
+          <button type="button" data-inc="${l.product.id}">+</button>
+        </div>
+      </td>
+      <td class="cart-line-price">${formatINR(l.product.price * l.qty)}</td>
+      <td><button class="cart-remove" data-remove="${l.product.id}">✕</button></td>
+    </tr>
+  `).join("");
+
+  rows.querySelectorAll("[data-inc]").forEach(b=> b.addEventListener("click", ()=>{
+    const id = b.getAttribute("data-inc");
+    const cart = getCart();
+    const p = PRODUCTS.find(x=>x.id===id);
+    const next = Math.min(p.stock, (cart[id]||0)+1);
+    setQty(id, next);
+    renderCart();
+  }));
+  rows.querySelectorAll("[data-dec]").forEach(b=> b.addEventListener("click", ()=>{
+    const id = b.getAttribute("data-dec");
+    const cart = getCart();
+    setQty(id, (cart[id]||0)-1);
+    renderCart();
+  }));
+  rows.querySelectorAll("[data-remove]").forEach(b=> b.addEventListener("click", ()=>{
+    removeFromCart(b.getAttribute("data-remove"));
+    renderCart();
+  }));
+}
+document.addEventListener("DOMContentLoaded", renderCart);
+</script>
+</body>
+</html>

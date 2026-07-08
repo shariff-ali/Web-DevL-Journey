@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Covenant Dashboard — The Lands Between Collectibles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/bento.css?v=5">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">Lands Between</span>
+      <span class="brand-sub">Collectibles</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="#" class="active">My Dashboard</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="login-btn" id="navLoginBtn">Sign Out</button>
+      <a href="cart.html" class="cart-btn">
+        Cart <span class="cart-count" data-cart-count>0</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<main class="container" style="padding: 120px 32px 100px;">
+  
+  <div class="shop-header center reveal glass-panel" style="max-width: 800px; margin: 0 auto 40px auto; padding: 40px;">
+    <p class="eyebrow">My Covenant</p>
+    <h1 id="dashName">Welcome, Champion.</h1>
+  </div>
+
+  <div class="shop-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="filters" style="border: 1px solid var(--line); padding: 30px; background: rgba(5,4,3,0.5); backdrop-filter: blur(10px);">
+      <h3 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 20px;">Dashboard</h3>
+      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 15px;">
+        <li><a href="#" style="color: var(--gold); border-bottom: 1px solid var(--gold); padding-bottom: 4px;">My Profile & Rank</a></li>
+        <li><a href="#" style="color: var(--text-muted); transition: color 0.3s;">Order Relics</a></li>
+        <li><a href="#" style="color: var(--text-muted); transition: color 0.3s;">Wishlist</a></li>
+        <li><a href="#" style="color: var(--text-muted); transition: color 0.3s;">Account Settings</a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT -->
+    <section>
+      
+      <!-- RANK CARD -->
+      <div class="glass-panel" style="margin-bottom: 40px; display: flex; align-items: center; justify-content: space-between; border-color: var(--gold);">
+        <div>
+          <p class="eyebrow" style="margin-bottom: 5px;">Current Covenant</p>
+          <h2 id="dashCov" style="font-size: 2rem; color: var(--gold);">Tarnished</h2>
+          <p style="color: var(--text-muted); margin-top: 10px;">Level 125 · 4 Relics Collected</p>
+        </div>
+        <div style="width: 80px; height: 80px; border: 1px solid var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--gold);">
+          I
+        </div>
+      </div>
+
+      <!-- RECENT ORDERS -->
+      <h3 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 20px;">Recent Relic Invocations</h3>
+      
+      <div class="cart-layout" style="display: block;">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Relic</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="cart-row">
+              <td style="color: var(--text-muted);">#LTB-0941</td>
+              <td>Malenia, Blade of Miquella (1/4 Scale)</td>
+              <td style="color: var(--text-muted);">Oct 12, 2026</td>
+              <td style="color: var(--gold);">Forging in Resin</td>
+              <td>$1,200.00</td>
+            </tr>
+            <tr class="cart-row">
+              <td style="color: var(--text-muted);">#LTB-0822</td>
+              <td>Artorias the Abysswalker</td>
+              <td style="color: var(--text-muted);">Sep 05, 2026</td>
+              <td style="color: var(--text-faint);">Delivered</td>
+              <td>$850.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="brand-mark">Lands Between</span>
+        <span class="brand-sub">Collectibles</span>
+        <p style="margin-top:15px; font-size:.85rem; color:var(--text-faint);">Forged in resin. Bound in lore.</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/main.js?v=5"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Check if user is logged in
+    const userJson = localStorage.getItem('ltb_user');
+    if (!userJson) {
+      window.location.href = 'index.html';
+      return;
+    }
+    
+    const user = JSON.parse(userJson);
+    document.getElementById('dashName').textContent = `Welcome, ${user.username}.`;
+    document.getElementById('dashCov').textContent = user.covClass;
+    
+    const logoutBtn = document.getElementById('navLoginBtn');
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('ltb_user');
+      window.location.href = 'index.html';
+    });
+  });
+</script>
+</body>
+</html>

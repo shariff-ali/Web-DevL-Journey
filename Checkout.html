@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — The Lands Between Collectibles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/bento.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">Lands Between</span>
+      <span class="brand-sub">Collectibles</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="shop.html?game=Elden+Ring">Elden Ring</a></li>
+      <li><a href="shop.html?game=Dark+Souls">Dark Souls</a></li>
+      <li><a href="shop.html?game=Bloodborne">Bloodborne</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="login-btn" id="navLoginBtn">Sign In</button>
+      <a href="cart.html" class="cart-btn">Cart <span class="cart-count" data-cart-count>0</span></a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<div class="page-banner">
+  <p class="crumbs"><a href="index.html">Home</a> / <a href="cart.html">Cart</a> / Checkout</p>
+  <h1>Checkout</h1>
+</div>
+
+<main class="container" style="padding:60px 32px 100px;" id="checkoutRoot"></main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 The Lands Between Collectibles. Unofficial fan tribute.</span>
+      <span>Crafted with reverence for the Soulslike legacy.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/main.js"></script>
+<script src="js/bento.js"></script>
+<script>
+const root = document.getElementById("checkoutRoot");
+
+function renderCheckoutForm(){
+  const lines = cartLines();
+  if(!lines.length){
+    root.innerHTML = `
+      <div class="empty-cart">
+        <div class="ic">⚔</div>
+        <h2>There is nothing to bear to the altar yet.</h2>
+        <p style="color:var(--text-muted); margin-bottom:30px;">Your cart is empty.</p>
+        <a href="shop.html" class="btn btn-solid">Browse the Collection</a>
+      </div>`;
+    return;
+  }
+
+  const { subtotal, gst, shipping, total } = computePricing();
+
+  root.innerHTML = `
+    <div class="checkout-steps">
+      <div class="step active">1. Delivery</div>
+      <div class="step active">2. Payment</div>
+      <div class="step">3. Confirmation</div>
+    </div>
+    <div class="checkout-layout">
+      <form id="checkoutForm" novalidate>
+        <div class="form-card">
+          <h3><span class="num">1</span> Delivery Address</h3>
+          <div class="form-row">
+            <div class="field"><label>Full Name</label><input type="text" id="fullName" required><span class="field-error"></span></div>
+            <div class="field"><label>Phone Number</label><input type="tel" id="phone" maxlength="10" required><span class="field-error"></span></div>
+          </div>
+          <div class="field full" style="margin-bottom:18px;"><label>Email</label><input type="email" id="email" required><span class="field-error"></span></div>
+          <div class="field full" style="margin-bottom:18px;"><label>Street Address</label><input type="text" id="address" required><span class="field-error"></span></div>
+          <div class="form-row">
+            <div class="field"><label>City</label><input type="text" id="city" required><span class="field-error"></span></div>
+            <div class="field"><label>State</label><input type="text" id="state" required><span class="field-error"></span></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>PIN Code</label><input type="text" id="pincode" maxlength="6" required><span class="field-error"></span></div>
+            <div class="field"><label>Country</label><input type="text" id="country" value="India" required><span class="field-error"></span></div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3><span class="num">2</span> Payment Details</h3>
+          <div class="pay-options" id="payOptions">
+            <div class="pay-opt selected" data-pay="card">Credit / Debit Card</div>
+            <div class="pay-opt" data-pay="upi">UPI</div>
+            <div class="pay-opt" data-pay="cod">Cash on Delivery</div>
+          </div>
+
+          <div id="cardFields" class="pay-card-fields">
+            <div class="field full" style="margin-bottom:18px;"><label>Card Number</label><input type="text" id="cardNumber" maxlength="19" placeholder="1234 5678 9012 3456"><span class="field-error"></span></div>
+            <div class="form-row">
+              <div class="field"><label>Expiry (MM/YY)</label><input type="text" id="cardExpiry" maxlength="5" placeholder="MM/YY"><span class="field-error"></span></div>
+              <div class="field"><label>CVV</label><input type="password" id="cardCvv" maxlength="3" placeholder="•••"><span class="field-error"></span></div>
+            </div>
+          </div>
+          <div id="upiFields" style="display:none;">
+            <div class="field full" style="margin-bottom:18px;"><label>UPI ID</label><input type="text" id="upiId" placeholder="yourname@upi"><span class="field-error"></span></div>
+          </div>
+          <div id="codFields" style="display:none;">
+            <p style="color:var(--text-muted)">Pay in cash when your relic arrives at your doorstep.</p>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-solid btn-block">Place Order</button>
+      </form>
+
+      <div class="summary-box">
+        <h3>Order Summary</h3>
+        ${lines.map(l=>`
+          <div class="summary-row"><span>${l.product.name} × ${l.qty}</span><span>${formatINR(l.product.price*l.qty)}</span></div>
+        `).join("")}
+        <div class="summary-row"><span>Subtotal</span><span>${formatINR(subtotal)}</span></div>
+        <div class="summary-row"><span>GST (18%)</span><span>${formatINR(gst)}</span></div>
+        <div class="summary-row"><span>Home Delivery</span><span>${shipping===0?'Free':formatINR(shipping)}</span></div>
+        <div class="summary-row total"><span>Grand Total</span><span>${formatINR(total)}</span></div>
+      </div>
+    </div>
+  `;
+
+  // payment option toggle
+  let payMethod = "card";
+  document.querySelectorAll(".pay-opt").forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+      document.querySelectorAll(".pay-opt").forEach(o=>o.classList.remove("selected"));
+      opt.classList.add("selected");
+      payMethod = opt.getAttribute("data-pay");
+      document.getElementById("cardFields").style.display = payMethod==="card" ? "block":"none";
+      document.getElementById("upiFields").style.display = payMethod==="upi" ? "block":"none";
+      document.getElementById("codFields").style.display = payMethod==="cod" ? "block":"none";
+    });
+  });
+
+  // input formatting
+  const phoneEl = document.getElementById("phone");
+  phoneEl.addEventListener("input", ()=> phoneEl.value = phoneEl.value.replace(/\D/g,"").slice(0,10));
+  const pinEl = document.getElementById("pincode");
+  pinEl.addEventListener("input", ()=> pinEl.value = pinEl.value.replace(/\D/g,"").slice(0,6));
+  const cardNumEl = document.getElementById("cardNumber");
+  cardNumEl.addEventListener("input", ()=>{
+    let v = cardNumEl.value.replace(/\D/g,"").slice(0,16);
+    cardNumEl.value = v.replace(/(.{4})/g,"$1 ").trim();
+  });
+  const expEl = document.getElementById("cardExpiry");
+  expEl.addEventListener("input", ()=>{
+    let v = expEl.value.replace(/\D/g,"").slice(0,4);
+    expEl.value = v.length>2 ? v.slice(0,2)+"/"+v.slice(2) : v;
+  });
+  const cvvEl = document.getElementById("cardCvv");
+  cvvEl.addEventListener("input", ()=> cvvEl.value = cvvEl.value.replace(/\D/g,"").slice(0,3));
+
+  function setError(id, msg){
+    const field = document.getElementById(id);
+    const err = field.closest(".field").querySelector(".field-error");
+    if(msg){ field.classList.add("invalid"); err.textContent = msg; }
+    else { field.classList.remove("invalid"); err.textContent = ""; }
+    return !msg;
+  }
+
+  document.getElementById("checkoutForm").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    let ok = true;
+    const name = document.getElementById("fullName").value.trim();
+    ok = setError("fullName", name.length<2 ? "Please enter your full name" : "") && ok;
+
+    const phone = document.getElementById("phone").value.trim();
+    ok = setError("phone", !/^[6-9]\d{9}$/.test(phone) ? "Enter a valid 10-digit phone number" : "") && ok;
+
+    const email = document.getElementById("email").value.trim();
+    ok = setError("email", !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "Enter a valid email address" : "") && ok;
+
+    const address = document.getElementById("address").value.trim();
+    ok = setError("address", address.length<5 ? "Enter your full street address" : "") && ok;
+
+    const city = document.getElementById("city").value.trim();
+    ok = setError("city", city.length<2 ? "Required" : "") && ok;
+
+    const state = document.getElementById("state").value.trim();
+    ok = setError("state", state.length<2 ? "Required" : "") && ok;
+
+    const pincode = document.getElementById("pincode").value.trim();
+    ok = setError("pincode", !/^\d{6}$/.test(pincode) ? "Enter a valid 6-digit PIN code" : "") && ok;
+
+    const country = document.getElementById("country").value.trim();
+    ok = setError("country", country.length<2 ? "Required" : "") && ok;
+
+    if(payMethod === "card"){
+      const num = document.getElementById("cardNumber").value.replace(/\s/g,"");
+      ok = setError("cardNumber", !/^\d{16}$/.test(num) ? "Enter a valid 16-digit card number" : "") && ok;
+      const exp = document.getElementById("cardExpiry").value;
+      const expValid = /^(0[1-9]|1[0-2])\/\d{2}$/.test(exp);
+      ok = setError("cardExpiry", !expValid ? "MM/YY format" : "") && ok;
+      const cvv = document.getElementById("cardCvv").value;
+      ok = setError("cardCvv", !/^\d{3}$/.test(cvv) ? "3 digits" : "") && ok;
+    } else if(payMethod === "upi"){
+      const upi = document.getElementById("upiId").value.trim();
+      ok = setError("upiId", !/^[\w.\-]+@[\w]+$/.test(upi) ? "Enter a valid UPI ID" : "") && ok;
+    }
+
+    if(!ok){
+      const firstInvalid = document.querySelector(".invalid");
+      if(firstInvalid) firstInvalid.scrollIntoView({behavior:"smooth", block:"center"});
+      return;
+    }
+
+    showSuccess();
+  });
+}
+
+function showSuccess(){
+  const { total } = computePricing();
+  const orderId = "LBC-" + Math.floor(100000 + Math.random()*899999);
+  clearCart();
+  root.innerHTML = `
+    <div class="order-success">
+      <div class="seal">✦</div>
+      <p class="eyebrow">Sealed in Resin & Lore</p>
+      <h1>Order Confirmed</h1>
+      <p>Your relics have been claimed. A confirmation has been etched into our archive and sent to your email.</p>
+      <div class="order-id">Order ID: ${orderId} &nbsp;·&nbsp; Total Paid: ${formatINR(total)}</div>
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <a href="shop.html" class="btn btn-solid">Continue Browsing</a>
+        <a href="index.html" class="btn btn-ghost">Return Home</a>
+      </div>
+    </div>
+  `;
+}
+
+document.addEventListener("DOMContentLoaded", renderCheckoutForm);
+</script>
+</body>
+</html>
