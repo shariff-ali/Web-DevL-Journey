@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop All Collectibles — The Lands Between Collectibles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/bento.css?v=3">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+
+<!-- WebGL Evil Eye Background Canvas -->
+<canvas id="eyeCanvas"></canvas>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">Lands Between</span>
+      <span class="brand-sub">Collectibles</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop</a></li>
+      <li><a href="shop.html?game=Elden+Ring">Elden Ring</a></li>
+      <li><a href="shop.html?game=Dark+Souls">Dark Souls</a></li>
+      <li><a href="shop.html?game=Bloodborne">Bloodborne</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="login-btn" id="navLoginBtn">Sign In</button>
+      <a href="cart.html" class="cart-btn">Cart <span class="cart-count" data-cart-count>0</span></a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<!-- HEADER TITLE -->
+<div class="shop-header center reveal glass-panel" style="max-width: 800px; margin: 40px auto; padding: 40px;">
+  <p class="eyebrow" id="shopEyebrow">Home / Shop</p>
+  <h1 id="shopTitle" style="font-size: clamp(2rem, 5vw, 3.2rem);">The Full Collection</h1>
+</div>
+
+<main class="container" style="padding:60px 32px 100px;">
+  <button class="btn btn-ghost btn-sm mobile-filter-toggle" id="filterToggle" style="margin-bottom:20px;">☰ Filters</button>
+  <div class="shop-layout">
+    <aside class="filters" id="filtersPanel">
+      <div class="filter-block">
+        <h4>Game</h4>
+        <label class="filter-opt"><input type="checkbox" value="Elden Ring" name="game"> Elden Ring</label>
+        <label class="filter-opt"><input type="checkbox" value="Dark Souls" name="game"> Dark Souls</label>
+        <label class="filter-opt"><input type="checkbox" value="Bloodborne" name="game"> Bloodborne</label>
+      </div>
+      <div class="filter-block">
+        <h4>Scale / Size</h4>
+        <label class="filter-opt"><input type="checkbox" value="1/4" name="scale"> 1/4 Scale</label>
+        <label class="filter-opt"><input type="checkbox" value="1/6" name="scale"> 1/6 Scale</label>
+        <label class="filter-opt"><input type="checkbox" value="1/7" name="scale"> 1/7 Scale</label>
+        <label class="filter-opt"><input type="checkbox" value="1/8" name="scale"> 1/8 Scale</label>
+      </div>
+      <div class="filter-block">
+        <h4>Price Range</h4>
+        <input type="range" id="priceRange" min="0" max="30000" step="500" value="30000">
+        <div class="range-row"><span>₹0</span><span id="priceRangeVal">₹30,000</span></div>
+      </div>
+      <div class="filter-block">
+        <button class="btn btn-ghost btn-block btn-sm" id="clearFilters">Clear All Filters</button>
+      </div>
+    </aside>
+
+    <div class="shop-results">
+      <div class="shop-toolbar">
+        <span class="results-count" id="resultsCount">9 pieces found</span>
+        <select class="sort-select" id="sortSelect">
+          <option value="popular">Sort: Popularity</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating">Highest Rated</option>
+        </select>
+      </div>
+      <div class="shop-product-grid" id="shopGrid"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 The Lands Between Collectibles. Unofficial fan tribute.</span>
+      <span>Crafted with reverence for the Soulslike legacy.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/lightfall.js"></script>
+<script src="js/main.js?v=4"></script>
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{
+  const grid = document.getElementById("shopGrid");
+  const resultsCount = document.getElementById("resultsCount");
+  const sortSelect = document.getElementById("sortSelect");
+  const priceRange = document.getElementById("priceRange");
+  const priceRangeVal = document.getElementById("priceRangeVal");
+  const gameBoxes = [...document.querySelectorAll('input[name="game"]')];
+  const scaleBoxes = [...document.querySelectorAll('input[name="scale"]')];
+
+  // Pre-select game from URL
+  const params = new URLSearchParams(location.search);
+  const gameParam = params.get("game");
+  if(gameParam){
+    gameBoxes.forEach(b=>{ if(b.value === gameParam) b.checked = true; });
+  }
+
+  function getFilters(){
+    const games = gameBoxes.filter(b=>b.checked).map(b=>b.value);
+    const scales = scaleBoxes.filter(b=>b.checked).map(b=>b.value);
+    const maxPrice = parseInt(priceRange.value,10);
+    return { games, scales, maxPrice };
+  }
+
+  function applyAndRender(){
+    const { games, scales, maxPrice } = getFilters();
+    priceRangeVal.textContent = formatINR(maxPrice) + (maxPrice >= 30000 ? "+" : "");
+    let list = PRODUCTS.filter(p=>{
+      if(games.length && !games.includes(p.game)) return false;
+      if(scales.length && !scales.includes(p.scale)) return false;
+      if(p.price > maxPrice) return false;
+      return true;
+    });
+
+    switch(sortSelect.value){
+      case "price-asc": list.sort((a,b)=>a.price-b.price); break;
+      case "price-desc": list.sort((a,b)=>b.price-a.price); break;
+      case "rating": list.sort((a,b)=>b.rating-a.rating); break;
+      default: list.sort((a,b)=>b.popularity-a.popularity);
+    }
+
+    resultsCount.textContent = `${list.length} piece${list.length!==1?'s':''} found`;
+    grid.innerHTML = list.length ? list.map(cardHTML).join("") :
+      `<div class="empty-state">No relics match thy search. <br>Try loosening the filters.</div>`;
+    bindQuickAdd(grid);
+    if (typeof initReveal === "function") initReveal();
+  }
+
+  function cardHTML(p){
+    return `
+    <div class="product-card reveal-scale">
+      <div class="product-thumb">
+        <span class="product-tag">${p.game}</span>
+        <a href="product.html?id=${p.id}"><img src="${p.images[0]}" alt="${p.name}" loading="lazy"></a>
+        <button class="quick-add" data-add="${p.id}">+ Quick Add to Cart</button>
+      </div>
+      <div class="product-info">
+        <span class="pgame">${p.scale} Scale</span>
+        <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
+        <span class="stars">${renderStars(p.rating)}</span>
+        <div class="product-meta">
+          <span class="price">${formatINR(p.price)}</span>
+          <span class="scale-pill">${p.stock>0?'In Stock':'Sold Out'}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  function bindQuickAdd(scope){
+    scope.querySelectorAll("[data-add]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.preventDefault();
+        const id = btn.getAttribute("data-add");
+        const p = PRODUCTS.find(x=>x.id===id);
+        addToCart(id,1);
+        showToast(`${p.name} added to cart`);
+      });
+    });
+  }
+
+  [...gameBoxes, ...scaleBoxes].forEach(b=> b.addEventListener("change", applyAndRender));
+  priceRange.addEventListener("input", applyAndRender);
+  sortSelect.addEventListener("change", applyAndRender);
+  document.getElementById("clearFilters").addEventListener("click", ()=>{
+    [...gameBoxes, ...scaleBoxes].forEach(b=> b.checked = false);
+    priceRange.value = 30000;
+    applyAndRender();
+  });
+  document.getElementById("filterToggle").addEventListener("click", ()=>{
+    document.getElementById("filtersPanel").classList.toggle("open");
+  });
+
+  applyAndRender();
+});
+</script>
+<script src="js/eye.js"></script>
+<script src="js/bento.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Product — The Lands Between Collectibles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/bento.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">Lands Between</span>
+      <span class="brand-sub">Collectibles</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="shop.html?game=Elden+Ring">Elden Ring</a></li>
+      <li><a href="shop.html?game=Dark+Souls">Dark Souls</a></li>
+      <li><a href="shop.html?game=Bloodborne">Bloodborne</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="login-btn" id="navLoginBtn">Sign In</button>
+      <a href="cart.html" class="cart-btn">Cart <span class="cart-count" data-cart-count>0</span></a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<div class="page-banner" style="padding:120px 0 40px;">
+  <p class="crumbs" id="crumbs"><a href="index.html">Home</a> / <a href="shop.html">Shop</a> / <span id="crumbName">Item</span></p>
+</div>
+
+<main class="container" id="pdRoot" style="padding-bottom:100px;">
+  <!-- injected -->
+</main>
+
+<section class="container" style="padding-top:0;">
+  <div class="section-head reveal">
+    <p class="eyebrow">You May Also Like</p>
+    <div class="gold-divider"></div>
+    <h2>From the Same Realm</h2>
+  </div>
+  <div class="related-grid" id="relatedGrid"></div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 The Lands Between Collectibles. Unofficial fan tribute.</span>
+      <span>Crafted with reverence for the Soulslike legacy.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/main.js"></script>
+<script src="js/bento.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id") || PRODUCTS[0].id;
+  const p = PRODUCTS.find(x=>x.id===id) || PRODUCTS[0];
+
+  document.getElementById("pageTitle").textContent = `${p.name} — The Lands Between Collectibles`;
+  document.getElementById("crumbName").textContent = p.name;
+
+  const stockLabel = p.stock === 0 ? "Sold Out" : p.stock <= 3 ? `Only ${p.stock} left` : "In Stock";
+  const stockClass = p.stock === 0 ? "out" : p.stock <= 3 ? "low" : "in";
+
+  document.getElementById("pdRoot").innerHTML = `
+    <div class="pd-layout">
+      <div class="pd-gallery">
+        <div class="pd-gallery-main"><img id="mainImg" src="${p.images[0]}" alt="${p.name}"></div>
+        <div class="pd-thumbs">
+          ${p.images.map((img,i)=>`<img src="${img}" data-idx="${i}" class="${i===0?'active':''}" alt="View ${i+1}">`).join("")}
+        </div>
+      </div>
+      <div class="pd-info">
+        <span class="pgame">${p.game}</span>
+        <h1>${p.name}</h1>
+        <div class="pd-rating">${renderStars(p.rating)} <span style="color:var(--text-faint)">· ${Math.round(p.popularity)} collectors own this</span></div>
+        <div class="pd-price">${formatINR(p.price)}</div>
+        <div class="pd-stock"><span class="dot ${stockClass}"></span> ${stockLabel}</div>
+        <p class="pd-desc">${p.desc}</p>
+        <div class="pd-specs">
+          <div><span>Scale</span>${p.scale}</div>
+          <div><span>Material</span>Hand-Cast Polyresin</div>
+          <div><span>Finish</span>Hand-Painted, Matte Seal</div>
+          <div><span>Edition</span>Numbered, Limited Run</div>
+        </div>
+        <div class="qty-row">
+          <div class="qty-control">
+            <button type="button" id="qtyMinus">−</button>
+            <input type="text" id="qtyInput" value="1" readonly>
+            <button type="button" id="qtyPlus">+</button>
+          </div>
+          <span style="color:var(--text-faint); font-size:.85rem;">Max ${Math.max(p.stock,0)} per order</span>
+        </div>
+        <div class="pd-actions">
+          <button class="btn btn-solid" id="addBtn" ${p.stock===0?'disabled':''}>${p.stock===0?'Sold Out':'Add to Cart'}</button>
+          <a href="cart.html" class="btn btn-ghost">View Cart</a>
+        </div>
+        <div class="lore-box">
+          <span class="eyebrow">Lore Fragment</span>
+          <p>${p.lore}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // gallery swap
+  document.querySelectorAll(".pd-thumbs img").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      document.getElementById("mainImg").src = t.src;
+      document.querySelectorAll(".pd-thumbs img").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+    });
+  });
+
+  // qty control
+  let qty = 1;
+  const qtyInput = document.getElementById("qtyInput");
+  document.getElementById("qtyMinus").addEventListener("click", ()=>{
+    qty = Math.max(1, qty-1); qtyInput.value = qty;
+  });
+  document.getElementById("qtyPlus").addEventListener("click", ()=>{
+    qty = Math.min(Math.max(p.stock,1), qty+1); qtyInput.value = qty;
+  });
+
+  document.getElementById("addBtn")?.addEventListener("click", ()=>{
+    addToCart(p.id, qty);
+    showToast(`${qty} × ${p.name} added to cart`);
+  });
+
+  // related
+  const related = PRODUCTS.filter(x=>x.game===p.game && x.id!==p.id).slice(0,4);
+  document.getElementById("relatedGrid").innerHTML = related.map(rp=>`
+    <div class="product-card reveal-scale">
+      <div class="product-thumb">
+        <span class="product-tag">${rp.game}</span>
+        <a href="product.html?id=${rp.id}"><img src="${rp.images[0]}" alt="${rp.name}" loading="lazy"></a>
+        <button class="quick-add" data-add="${rp.id}">+ Quick Add to Cart</button>
+      </div>
+      <div class="product-info">
+        <span class="pgame">${rp.scale} Scale</span>
+        <h3><a href="product.html?id=${rp.id}">${rp.name}</a></h3>
+        <span class="stars">${renderStars(rp.rating)}</span>
+        <div class="product-meta">
+          <span class="price">${formatINR(rp.price)}</span>
+          <span class="scale-pill">${rp.stock>0?'In Stock':'Sold Out'}</span>
+        </div>
+      </div>
+    </div>`).join("");
+  document.querySelectorAll("[data-add]").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      e.preventDefault();
+      const rid = btn.getAttribute("data-add");
+      const rp = PRODUCTS.find(x=>x.id===rid);
+      addToCart(rid,1);
+      showToast(`${rp.name} added to cart`);
+    });
+  });
+  if (typeof initReveal === "function") initReveal();
+});
+</script>
+</body>
+</html>
